@@ -53,8 +53,8 @@
 
 .flipbook-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
+  height: 100vh;
+  aspect-ratio: 16 / 10;
   display: flex;
   justify-content: center;
   align-items: center;
