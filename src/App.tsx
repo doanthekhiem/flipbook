@@ -6,9 +6,16 @@ import "./App.css";
 import logo from "./assets/logo.webp";
 import latSachSound from "./assets/lat_sach.mp3";
 
-// Cấu hình worker cho pdfjs - sử dụng worker từ public folder
+// Cấu hình worker cho pdfjs
+// Sử dụng CDN để đảm bảo tương thích với mọi trình duyệt, đặc biệt là iPhone/Safari
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  const pdfjsVersion = pdfjsLib.version || "5.4.394";
+  
+  // Sử dụng CDN - đảm bảo worker luôn tương thích với version pdfjs-dist
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
+  
+  console.log("PDF.js Worker configured:", pdfjsLib.GlobalWorkerOptions.workerSrc);
+  console.log("PDF.js Version:", pdfjsVersion);
 }
 
 interface PageProps {
@@ -125,8 +132,24 @@ function App() {
     const loadPDF = async () => {
       try {
         setError("Đang tải PDF document...");
+        
+        // Kiểm tra worker đã được cấu hình chưa
+        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          const errMsg = "LỖI: PDF.js worker chưa được cấu hình!";
+          setError(errMsg);
+          throw new Error(errMsg);
+        }
+        
+        setError(`Worker đã được cấu hình: ${pdfjsLib.GlobalWorkerOptions.workerSrc}`);
+        
         // Load PDF document
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        setError("Đang gọi getDocument...");
+        const loadingTask = pdfjsLib.getDocument({
+          url: pdfUrl,
+          verbosity: 0, // Giảm log để tăng performance
+        });
+        
+        setError("Đang đợi PDF load...");
         const pdf = await loadingTask.promise;
         setError("Đã tải PDF, đang lấy số trang...");
         const numPages = pdf.numPages;
