@@ -203,19 +203,73 @@ function App() {
   }, [currentPage, totalPages]);
 
   useEffect(() => {
-    if (flipBookRef.current && pages.length > 0) {
-      // Sử dụng setTimeout để đảm bảo HTMLFlipBook đã được mount hoàn toàn
-      setTimeout(() => {
+    if (flipBookRef.current && pages.length > 0 && !isFlipBookReady) {
+      // Hàm kiểm tra và set ready state
+      const checkAndSetReady = () => {
         const pageFlip = flipBookRef.current?.getPageFlip?.() || flipBookRef.current?.pageFlip?.();
         if (pageFlip) {
-          const count = pageFlip.getPageCount();
-          setTotalPages(count);
-          // Đánh dấu flipbook đã sẵn sàng sau khi đã khởi tạo xong
-          setIsFlipBookReady(true);
+          try {
+            const count = pageFlip.getPageCount();
+            setTotalPages(count);
+            setIsFlipBookReady(true);
+            return true;
+          } catch (error) {
+            console.error("Error getting page count:", error);
+            // Fallback: set ready anyway nếu có lỗi
+            setIsFlipBookReady(true);
+            return true;
+          }
         }
+        return false;
+      };
+
+      let timeout1: ReturnType<typeof setTimeout> | null = null;
+      let timeout2: ReturnType<typeof setTimeout> | null = null;
+      let timeout3: ReturnType<typeof setTimeout> | null = null;
+
+      // Thử ngay lập tức
+      if (checkAndSetReady()) {
+        return;
+      }
+
+      // Nếu chưa sẵn sàng, thử lại sau 100ms
+      timeout1 = setTimeout(() => {
+        if (checkAndSetReady()) {
+          return;
+        }
+        // Nếu vẫn chưa sẵn sàng, thử lại sau 300ms
+        timeout2 = setTimeout(() => {
+          if (checkAndSetReady()) {
+            return;
+          }
+          // Fallback cuối cùng: set ready sau 500ms ngay cả khi không thể lấy pageFlip
+          // Điều này đảm bảo flipbook sẽ hiển thị trên mọi iPhone
+          timeout3 = setTimeout(() => {
+            setIsFlipBookReady(true);
+          }, 500);
+        }, 300);
       }, 100);
+
+      return () => {
+        if (timeout1) clearTimeout(timeout1);
+        if (timeout2) clearTimeout(timeout2);
+        if (timeout3) clearTimeout(timeout3);
+      };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pages]);
+
+  // Fallback: Đảm bảo flipbook được hiển thị sau khi loading xong
+  // Nếu sau khi loading xong mà isFlipBookReady vẫn chưa được set sau 1.5 giây, tự động set nó
+  useEffect(() => {
+    if (!isLoading && pages.length > 0 && !isFlipBookReady) {
+      const fallbackTimeout = setTimeout(() => {
+        setIsFlipBookReady(true);
+      }, 1500);
+
+      return () => clearTimeout(fallbackTimeout);
+    }
+  }, [isLoading, pages.length, isFlipBookReady]);
 
   const onPage = (e: FlipEvent) => {
     const pageNum = typeof e.data === "number" ? e.data : parseInt(e.data as string, 10);
