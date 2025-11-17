@@ -57,6 +57,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [pages, setPages] = useState<string[]>([]);
   const [canFlipNext, setCanFlipNext] = useState(true);
+  const [isFlipBookReady, setIsFlipBookReady] = useState(false);
 
   const pdfUrl = "https://cdnc.heyzine.com/files/uploaded/v3/9da8b102d41c367850b4e0cbc7fc314217882cdc.pdf";
 
@@ -104,14 +105,16 @@ function App() {
 
   useEffect(() => {
     if (flipBookRef.current && pages.length > 0) {
-      // Sử dụng setTimeout để tránh cập nhật state đồng bộ trong effect
+      // Sử dụng setTimeout để đảm bảo HTMLFlipBook đã được mount hoàn toàn
       setTimeout(() => {
         const pageFlip = flipBookRef.current?.getPageFlip?.() || flipBookRef.current?.pageFlip?.();
         if (pageFlip) {
           const count = pageFlip.getPageCount();
           setTotalPages(count);
+          // Đánh dấu flipbook đã sẵn sàng sau khi đã khởi tạo xong
+          setIsFlipBookReady(true);
         }
-      }, 0);
+      }, 100);
     }
   }, [pages]);
 
@@ -162,67 +165,64 @@ function App() {
 
   return (
     <div className="app-container">
-      {isLoading ? (
-        <div className="loading">
-          <img src={logo} alt="Logo" className="loading-logo" />
-          <p>Đang tải Menu...</p>
+      <div className={`loading ${isLoading ? 'visible' : 'hidden'}`}>
+        <img src={logo} alt="Logo" className="loading-logo" />
+        <p>Đang tải Menu...</p>
+      </div>
+      <div className={`flipbook-wrapper ${!isLoading && isFlipBookReady ? 'visible' : 'hidden'}`}>
+        {pages.length > 0 && (
+          <HTMLFlipBook
+            width={550}
+            height={733}
+            size="stretch"
+            minWidth={300}
+            maxWidth={1200}
+            minHeight={400}
+            maxHeight={900}
+            maxShadowOpacity={0.5}
+            showCover={false}
+            mobileScrollSupport={true}
+            flippingTime={800}
+            drawShadow={true}
+            usePortrait={true}
+            startPage={0}
+            startZIndex={0}
+            autoSize={true}
+            clickEventForward={true}
+            useMouseEvents={canFlipNext && currentPage < totalPages - 1}
+            swipeDistance={30}
+            showPageCorners={false}
+            disableFlipByClick={false}
+            onFlip={onPage}
+            onChangeState={onChangeState}
+            className="demo-book"
+            style={{}}
+            ref={flipBookRef}
+          >
+            {pages.map((imageUrl, index) => (
+              <Page key={index} number={index + 1} imageUrl={imageUrl} />
+            ))}
+          </HTMLFlipBook>
+        )}
+        <div className="navigation-controls">
+          <button
+            className="nav-button prev-button"
+            onClick={prevButtonClick}
+            disabled={currentPage === 0}
+            aria-label="Trang trước"
+          >
+            ←
+          </button>
+          <button
+            className="nav-button next-button"
+            onClick={nextButtonClick}
+            disabled={currentPage >= totalPages - 1}
+            aria-label="Trang sau"
+          >
+            →
+          </button>
         </div>
-      ) : (
-        <div className="flipbook-wrapper">
-          {pages.length > 0 && (
-            <HTMLFlipBook
-              width={550}
-              height={733}
-              size="stretch"
-              minWidth={300}
-              maxWidth={1200}
-              minHeight={400}
-              maxHeight={900}
-              maxShadowOpacity={0.5}
-              showCover={false}
-              mobileScrollSupport={true}
-              flippingTime={800}
-              drawShadow={true}
-              usePortrait={true}
-              startPage={0}
-              startZIndex={0}
-              autoSize={true}
-              clickEventForward={true}
-              useMouseEvents={canFlipNext && currentPage < totalPages - 1}
-              swipeDistance={30}
-              showPageCorners={false}
-              disableFlipByClick={false}
-              onFlip={onPage}
-              onChangeState={onChangeState}
-              className="demo-book"
-              style={{}}
-              ref={flipBookRef}
-            >
-              {pages.map((imageUrl, index) => (
-                <Page key={index} number={index + 1} imageUrl={imageUrl} />
-              ))}
-            </HTMLFlipBook>
-          )}
-          <div className="navigation-controls">
-            <button
-              className="nav-button prev-button"
-              onClick={prevButtonClick}
-              disabled={currentPage === 0}
-              aria-label="Trang trước"
-            >
-              ←
-            </button>
-            <button
-              className="nav-button next-button"
-              onClick={nextButtonClick}
-              disabled={currentPage >= totalPages - 1}
-              aria-label="Trang sau"
-            >
-              →
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
