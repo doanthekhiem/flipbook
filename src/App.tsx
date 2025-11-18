@@ -81,7 +81,7 @@ function App() {
   const pdfUrl = "https://cdnc.heyzine.com/files/uploaded/v3/9da8b102d41c367850b4e0cbc7fc314217882cdc.pdf";
 
   // Số trang load trước để hiển thị ngay
-  const INITIAL_PAGES_TO_LOAD = 3;
+  const INITIAL_PAGES_TO_LOAD = 10;
 
   // Khởi tạo audio
   useEffect(() => {
