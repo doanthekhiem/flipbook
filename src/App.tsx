@@ -382,7 +382,7 @@ function App() {
             autoSize={true}
             clickEventForward={true}
             useMouseEvents={canFlipNext && currentPage < totalPages - 1}
-            swipeDistance={30}
+            swipeDistance={15}
             showPageCorners={false}
             disableFlipByClick={false}
             onFlip={onPage}
