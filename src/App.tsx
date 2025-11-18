@@ -7,15 +7,13 @@ import logo from "./assets/logo.webp";
 import latSachSound from "./assets/lat_sach.mp3";
 
 // Cấu hình worker cho pdfjs
-// Sử dụng CDN để đảm bảo tương thích với mọi trình duyệt, đặc biệt là iPhone/Safari
+// Tự host worker cùng domain để tương thích với iPhone/Safari (không dùng .mjs từ CDN)
 if (typeof window !== "undefined") {
-  const pdfjsVersion = pdfjsLib.version || "5.4.394";
-  
-  // Sử dụng CDN - đảm bảo worker luôn tương thích với version pdfjs-dist
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
+  // Sử dụng local worker file để tránh vấn đề cross-origin và .mjs trên Safari
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
   
   console.log("PDF.js Worker configured:", pdfjsLib.GlobalWorkerOptions.workerSrc);
-  console.log("PDF.js Version:", pdfjsVersion);
+  console.log("PDF.js Version:", pdfjsLib.version || "3.11.174");
 }
 
 interface PageProps {
@@ -78,6 +76,12 @@ function App() {
   const pdfRef = useRef<PDFDocumentProxy | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Phát hiện iOS/Safari để tắt shadow (tránh WebGL crash)
+  const isIOS = typeof window !== "undefined" && (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+
   const pdfUrl = "https://cdnc.heyzine.com/files/uploaded/v3/9da8b102d41c367850b4e0cbc7fc314217882cdc.pdf";
 
   // Số trang load trước để hiển thị ngay
@@ -100,7 +104,8 @@ function App() {
     try {
       setError(`Đang load trang ${pageNumber}...`);
       const page = await pdf.getPage(pageNumber);
-      const viewport = page.getViewport({ scale: 2 });
+      // Giảm scale xuống 1.2 để tránh crash trên iPhone khi canvas quá lớn
+      const viewport = page.getViewport({ scale: 1.2 });
 
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
@@ -113,10 +118,10 @@ function App() {
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
+      // Xóa param canvas - version 3.11.174 không hỗ trợ và Safari không hỗ trợ
       await page.render({
         canvasContext: context,
         viewport: viewport,
-        canvas: canvas,
       }).promise;
 
       setError(null);
@@ -141,6 +146,8 @@ function App() {
         }
         
         setError(`Worker đã được cấu hình: ${pdfjsLib.GlobalWorkerOptions.workerSrc}`);
+        console.log("PDF.js API Version:", pdfjsLib.version);
+        console.log("PDF.js Worker Source:", pdfjsLib.GlobalWorkerOptions.workerSrc);
         
         // Load PDF document
         setError("Đang gọi getDocument...");
@@ -416,11 +423,11 @@ function App() {
             maxWidth={1200}
             minHeight={400}
             maxHeight={900}
-            maxShadowOpacity={0.5}
+            maxShadowOpacity={isIOS ? 0 : 0.5}
             showCover={false}
             mobileScrollSupport={true}
             flippingTime={800}
-            drawShadow={true}
+            drawShadow={!isIOS}
             usePortrait={true}
             startPage={0}
             startZIndex={0}
