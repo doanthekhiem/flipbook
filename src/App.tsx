@@ -9,11 +9,7 @@ import latSachSound from "./assets/lat_sach.mp3";
 // Cấu hình worker cho pdfjs
 // Tự host worker cùng domain để tương thích với iPhone/Safari (không dùng .mjs từ CDN)
 if (typeof window !== "undefined") {
-  // Sử dụng local worker file để tránh vấn đề cross-origin và .mjs trên Safari
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-  
-  console.log("PDF.js Worker configured:", pdfjsLib.GlobalWorkerOptions.workerSrc);
-  console.log("PDF.js Version:", pdfjsLib.version || "3.11.174");
 }
 
 interface PageProps {
@@ -101,80 +97,54 @@ function App() {
 
   // Hàm load một trang PDF
   const loadPage = async (pdf: PDFDocumentProxy, pageNumber: number): Promise<string> => {
-    try {
-      setError(`Đang load trang ${pageNumber}...`);
-      const page = await pdf.getPage(pageNumber);
-      // Giảm scale xuống 1.2 để tránh crash trên iPhone khi canvas quá lớn
-      const viewport = page.getViewport({ scale: 1.2 });
+    const page = await pdf.getPage(pageNumber);
+    // Giảm scale xuống 1.2 để tránh crash trên iPhone khi canvas quá lớn
+    const viewport = page.getViewport({ scale: 1.2 });
 
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      if (!context) {
-        const errMsg = `LỖI: Không thể lấy canvas context cho trang ${pageNumber}`;
-        setError(errMsg);
-        throw new Error(errMsg);
-      }
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      // Xóa param canvas - version 3.11.174 không hỗ trợ và Safari không hỗ trợ
-      await page.render({
-        canvasContext: context,
-        viewport: viewport,
-      }).promise;
-
-      setError(null);
-      return canvas.toDataURL("image/png");
-    } catch (err) {
-      const errMsg = `LỖI load trang ${pageNumber}: ${err instanceof Error ? err.message : String(err)}`;
-      setError(errMsg);
-      throw err;
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error(`Không thể lấy canvas context cho trang ${pageNumber}`);
     }
+
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    // Xóa param canvas - version 3.11.174 không hỗ trợ và Safari không hỗ trợ
+    await page.render({
+      canvasContext: context,
+      viewport: viewport,
+    }).promise;
+
+    return canvas.toDataURL("image/png");
   };
 
   useEffect(() => {
     const loadPDF = async () => {
       try {
-        setError("Đang tải PDF document...");
-        
-        // Kiểm tra worker đã được cấu hình chưa
         if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-          const errMsg = "LỖI: PDF.js worker chưa được cấu hình!";
-          setError(errMsg);
-          throw new Error(errMsg);
+          throw new Error("PDF.js worker chưa được cấu hình!");
         }
         
-        setError(`Worker đã được cấu hình: ${pdfjsLib.GlobalWorkerOptions.workerSrc}`);
-        console.log("PDF.js API Version:", pdfjsLib.version);
-        console.log("PDF.js Worker Source:", pdfjsLib.GlobalWorkerOptions.workerSrc);
-        
-        // Load PDF document
-        setError("Đang gọi getDocument...");
         const loadingTask = pdfjsLib.getDocument({
           url: pdfUrl,
-          verbosity: 0, // Giảm log để tăng performance
+          verbosity: 0,
         });
         
-        setError("Đang đợi PDF load...");
         const pdf = await loadingTask.promise;
-        setError("Đã tải PDF, đang lấy số trang...");
         const numPages = pdf.numPages;
         setTotalPages(numPages);
         pdfRef.current = pdf;
-        setError(`Đã tải PDF thành công. Tổng số trang: ${numPages}`);
 
         // Khởi tạo mảng pages với null cho các trang chưa load
         const initialPages: (string | null)[] = new Array(numPages).fill(null);
         setPages(initialPages);
 
         // Load trước một số trang đầu tiên để hiển thị ngay
-        setError(`Đang load ${INITIAL_PAGES_TO_LOAD} trang đầu tiên...`);
         const pagesToLoadInitially = Math.min(INITIAL_PAGES_TO_LOAD, numPages);
         const initialPageImages: string[] = [];
 
         for (let i = 1; i <= pagesToLoadInitially; i++) {
-          setError(`Đang load trang ${i}/${pagesToLoadInitially}...`);
           const imageUrl = await loadPage(pdf, i);
           initialPageImages.push(imageUrl);
         }
@@ -188,9 +158,7 @@ function App() {
           return updated;
         });
 
-        setError("Đã load xong các trang đầu tiên. Đang ẩn loading...");
         setIsLoading(false);
-        setError(null);
 
         // Load các trang còn lại trong background
         const loadRemainingPages = async () => {
@@ -204,8 +172,8 @@ function App() {
               });
               // Thêm delay nhỏ để không block UI
               await new Promise((resolve) => setTimeout(resolve, 100));
-            } catch (error) {
-              console.error(`Error loading page ${i}:`, error);
+            } catch {
+              // Silent fail cho background loading
             }
           }
         };
@@ -215,8 +183,7 @@ function App() {
           loadRemainingPages();
         }, 500);
       } catch (error) {
-        const errMsg = `LỖI load PDF: ${error instanceof Error ? error.message : String(error)}`;
-        console.error("Error loading PDF:", error);
+        const errMsg = `Lỗi tải PDF: ${error instanceof Error ? error.message : String(error)}`;
         setError(errMsg);
         setIsLoading(false);
       }
@@ -242,8 +209,8 @@ function App() {
                 updated[i - 1] = imageUrl;
                 return updated;
               });
-            } catch (error) {
-              console.error(`Error loading page ${i}:`, error);
+            } catch {
+              // Silent fail cho preload
             }
           }
         }
@@ -258,27 +225,19 @@ function App() {
     if (flipBookRef.current && pages.length > 0 && !isFlipBookReady) {
       // Hàm kiểm tra và set ready state
       const checkAndSetReady = () => {
-        setError("Đang kiểm tra flipbook ready state...");
         const pageFlip = flipBookRef.current?.getPageFlip?.() || flipBookRef.current?.pageFlip?.();
         if (pageFlip) {
           try {
-            setError("Đang lấy số trang từ flipbook...");
             const count = pageFlip.getPageCount();
             setTotalPages(count);
             setIsFlipBookReady(true);
-            setError("Flipbook đã sẵn sàng!");
-            setTimeout(() => setError(null), 1000);
             return true;
-          } catch (error) {
-            const errMsg = `LỖI get page count: ${error instanceof Error ? error.message : String(error)}`;
-            console.error("Error getting page count:", error);
-            setError(errMsg);
+          } catch {
             // Fallback: set ready anyway nếu có lỗi
             setIsFlipBookReady(true);
             return true;
           }
         }
-        setError("Flipbook chưa sẵn sàng, pageFlip không tồn tại");
         return false;
       };
 
@@ -287,30 +246,23 @@ function App() {
       let timeout3: ReturnType<typeof setTimeout> | null = null;
 
       // Thử ngay lập tức
-      setError("Thử kiểm tra flipbook ngay lập tức...");
       if (checkAndSetReady()) {
         return;
       }
 
       // Nếu chưa sẵn sàng, thử lại sau 100ms
-      setError("Flipbook chưa sẵn sàng, thử lại sau 100ms...");
       timeout1 = setTimeout(() => {
         if (checkAndSetReady()) {
           return;
         }
         // Nếu vẫn chưa sẵn sàng, thử lại sau 300ms
-        setError("Flipbook vẫn chưa sẵn sàng, thử lại sau 300ms...");
         timeout2 = setTimeout(() => {
           if (checkAndSetReady()) {
             return;
           }
           // Fallback cuối cùng: set ready sau 500ms ngay cả khi không thể lấy pageFlip
-          // Điều này đảm bảo flipbook sẽ hiển thị trên mọi iPhone
-          setError("Fallback: Tự động set flipbook ready sau 500ms...");
           timeout3 = setTimeout(() => {
             setIsFlipBookReady(true);
-            setError("Đã set flipbook ready bằng fallback!");
-            setTimeout(() => setError(null), 1000);
           }, 500);
         }, 300);
       }, 100);
@@ -325,14 +277,10 @@ function App() {
   }, [pages]);
 
   // Fallback: Đảm bảo flipbook được hiển thị sau khi loading xong
-  // Nếu sau khi loading xong mà isFlipBookReady vẫn chưa được set sau 1.5 giây, tự động set nó
   useEffect(() => {
     if (!isLoading && pages.length > 0 && !isFlipBookReady) {
-      setError("Fallback: Đang đợi 1.5 giây để set flipbook ready...");
       const fallbackTimeout = setTimeout(() => {
-        setError("Fallback: Đã set flipbook ready sau 1.5 giây!");
         setIsFlipBookReady(true);
-        setTimeout(() => setError(null), 1000);
       }, 1500);
 
       return () => clearTimeout(fallbackTimeout);
@@ -346,8 +294,8 @@ function App() {
     // Phát âm thanh lật sách
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch((error) => {
-        console.error("Error playing sound:", error);
+      audioRef.current.play().catch(() => {
+        // Silent fail cho audio
       });
     }
 
@@ -397,7 +345,7 @@ function App() {
       {error && (
         <div className="error-display">
           <div className="error-content">
-            <h2 className="error-title">DEBUG INFO</h2>
+            <h2 className="error-title">Lỗi</h2>
             <p className="error-message">{error}</p>
             <button 
               className="error-close" 
