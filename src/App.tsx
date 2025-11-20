@@ -9,7 +9,7 @@ import latSachSound from "./assets/lat_sach.mp3";
 // Cấu hình worker cho pdfjs
 // Tự host worker cùng domain để tương thích với iPhone/Safari (không dùng .mjs từ CDN)
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 }
 
 interface PageProps {
@@ -60,6 +60,23 @@ interface FlipBookRef {
     | undefined;
 }
 
+interface MenuItem {
+  id: string;
+  name: string;
+  startPage: number;
+  endPage: number;
+}
+
+const MENU_ITEMS: MenuItem[] = [
+  { id: "nuoc", name: "Nước", startPage: 1, endPage: 4 },
+  { id: "cafe", name: "Cafe", startPage: 5, endPage: 10 },
+  { id: "sinh-to", name: "Sinh tố", startPage: 11, endPage: 15 },
+  { id: "khac", name: "Khác", startPage: 16, endPage: 20 },
+  { id: "dac-biet", name: "Đặc biệt", startPage: 21, endPage: 23 },
+];
+
+type ViewMode = "flipbook" | "menu";
+
 function App() {
   const flipBookRef = useRef<FlipBookRef | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -71,12 +88,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const pdfRef = useRef<PDFDocumentProxy | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Phát hiện iOS/Safari để tắt shadow (tránh WebGL crash)
-  const isIOS = typeof window !== "undefined" && (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>("flipbook");
+  const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
+  const [menuPages, setMenuPages] = useState<Map<number, string>>(new Map());
 
   const pdfUrl = "https://cdnc.heyzine.com/files/uploaded/v3/9da8b102d41c367850b4e0cbc7fc314217882cdc.pdf";
 
@@ -125,12 +139,12 @@ function App() {
         if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
           throw new Error("PDF.js worker chưa được cấu hình!");
         }
-        
+
         const loadingTask = pdfjsLib.getDocument({
           url: pdfUrl,
           verbosity: 0,
         });
-        
+
         const pdf = await loadingTask.promise;
         const numPages = pdf.numPages;
         setTotalPages(numPages);
@@ -340,6 +354,50 @@ function App() {
     }
   };
 
+  // Load menu pages khi chọn menu item
+  const loadMenuPages = async (menuItem: MenuItem) => {
+    if (!pdfRef.current) return;
+
+    const newMenuPages = new Map<number, string>();
+    const pagesToLoad: number[] = [];
+
+    for (let i = menuItem.startPage; i <= menuItem.endPage; i++) {
+      if (!menuPages.has(i)) {
+        pagesToLoad.push(i);
+      } else {
+        newMenuPages.set(i, menuPages.get(i)!);
+      }
+    }
+
+    for (const pageNum of pagesToLoad) {
+      try {
+        const imageUrl = await loadPage(pdfRef.current, pageNum);
+        newMenuPages.set(pageNum, imageUrl);
+      } catch (err) {
+        console.error(`Lỗi load trang ${pageNum}:`, err);
+      }
+    }
+
+    setMenuPages((prev) => {
+      const updated = new Map(prev);
+      newMenuPages.forEach((url, pageNum) => {
+        updated.set(pageNum, url);
+      });
+      return updated;
+    });
+  };
+
+  const handleMenuSelect = (menuItem: MenuItem) => {
+    setSelectedMenu(menuItem);
+    setViewMode("menu");
+    loadMenuPages(menuItem);
+  };
+
+  const handleBackToFlipbook = () => {
+    setViewMode("flipbook");
+    setSelectedMenu(null);
+  };
+
   return (
     <div className="app-container">
       {error && (
@@ -347,74 +405,117 @@ function App() {
           <div className="error-content">
             <h2 className="error-title">Lỗi</h2>
             <p className="error-message">{error}</p>
-            <button 
-              className="error-close" 
-              onClick={() => setError(null)}
-              aria-label="Đóng"
-            >
+            <button className="error-close" onClick={() => setError(null)} aria-label="Đóng">
               ✕
             </button>
           </div>
         </div>
       )}
-      <div className={`loading ${isLoading ? 'visible' : 'hidden'}`}>
+      <div className={`loading ${isLoading ? "visible" : "hidden"}`}>
         <img src={logo} alt="Logo" className="loading-logo" />
         <p>Đang tải Menu...</p>
       </div>
-      <div className={`flipbook-wrapper ${!isLoading && isFlipBookReady ? 'visible' : 'hidden'}`}>
-        {pages.length > 0 && (
-          <HTMLFlipBook
-            width={550}
-            height={733}
-            size="stretch"
-            minWidth={300}
-            maxWidth={1200}
-            minHeight={400}
-            maxHeight={900}
-            maxShadowOpacity={isIOS ? 0 : 0.5}
-            showCover={false}
-            mobileScrollSupport={true}
-            flippingTime={800}
-            drawShadow={!isIOS}
-            usePortrait={true}
-            startPage={0}
-            startZIndex={0}
-            autoSize={true}
-            clickEventForward={true}
-            useMouseEvents={canFlipNext && currentPage < totalPages - 1}
-            swipeDistance={15}
-            showPageCorners={false}
-            disableFlipByClick={false}
-            onFlip={onPage}
-            onChangeState={onChangeState}
-            className="demo-book"
-            style={{}}
-            ref={flipBookRef}
-          >
-            {pages.map((imageUrl, index) => (
-              <Page key={index} number={index + 1} imageUrl={imageUrl || ""} />
-            ))}
-          </HTMLFlipBook>
-        )}
-        <div className="navigation-controls">
-          <button
-            className="nav-button prev-button"
-            onClick={prevButtonClick}
-            disabled={currentPage === 0}
-            aria-label="Trang trước"
-          >
-            ←
-          </button>
-          <button
-            className="nav-button next-button"
-            onClick={nextButtonClick}
-            disabled={currentPage >= totalPages - 1}
-            aria-label="Trang sau"
-          >
-            →
-          </button>
+
+      {/* Menu Navigation */}
+      {!isLoading && (
+        <div className="menu-navigation">
+          {viewMode === "flipbook" ? (
+            <div className="menu-buttons">
+              {MENU_ITEMS.map((item) => (
+                <button key={item.id} className="menu-button" onClick={() => handleMenuSelect(item)}>
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button className="back-button" onClick={handleBackToFlipbook}>
+              ← Về Menu chính
+            </button>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Flipbook View */}
+      {viewMode === "flipbook" && (
+        <div className={`flipbook-wrapper ${!isLoading && isFlipBookReady ? "visible" : "hidden"}`}>
+          {pages.length > 0 && (
+            <HTMLFlipBook
+              width={550}
+              height={733}
+              size="stretch"
+              minWidth={300}
+              maxWidth={1200}
+              minHeight={400}
+              maxHeight={900}
+              maxShadowOpacity={1}
+              showCover={false}
+              mobileScrollSupport={true}
+              flippingTime={800}
+              drawShadow={true}
+              usePortrait={true}
+              startPage={0}
+              startZIndex={0}
+              autoSize={true}
+              clickEventForward={true}
+              useMouseEvents={canFlipNext && currentPage < totalPages - 1}
+              swipeDistance={15}
+              showPageCorners={false}
+              disableFlipByClick={false}
+              onFlip={onPage}
+              onChangeState={onChangeState}
+              className="demo-book"
+              style={{}}
+              ref={flipBookRef}
+            >
+              {pages.map((imageUrl, index) => (
+                <Page key={index} number={index + 1} imageUrl={imageUrl || ""} />
+              ))}
+            </HTMLFlipBook>
+          )}
+          <div className="navigation-controls">
+            <button
+              className="nav-button prev-button"
+              onClick={prevButtonClick}
+              disabled={currentPage === 0}
+              aria-label="Trang trước"
+            >
+              ←
+            </button>
+            <button
+              className="nav-button next-button"
+              onClick={nextButtonClick}
+              disabled={currentPage >= totalPages - 1}
+              aria-label="Trang sau"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Menu View */}
+      {viewMode === "menu" && selectedMenu && (
+        <div className="menu-view">
+          <div className="menu-pages-container">
+            {Array.from({ length: selectedMenu.endPage - selectedMenu.startPage + 1 }, (_, idx) => {
+              const pageNum = selectedMenu.startPage + idx;
+              const imageUrl = menuPages.get(pageNum);
+              return (
+                <div key={pageNum} className="menu-page">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={`Trang ${pageNum}`} className="menu-page-image" />
+                  ) : (
+                    <div className="menu-page-loading">
+                      <div className="loading-spinner"></div>
+                      <p>Đang tải trang {pageNum}...</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

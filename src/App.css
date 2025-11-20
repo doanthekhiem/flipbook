@@ -387,3 +387,379 @@
     right: 8px;
   }
 }
+
+/* Menu Navigation - Cafe Style */
+.menu-navigation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 20px rgba(139, 111, 71, 0.08);
+  border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+}
+
+.menu-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  max-width: 1200px;
+  width: 100%;
+}
+
+.menu-button {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 230, 211, 0.6) 100%);
+  border: 1.5px solid rgba(212, 165, 116, 0.4);
+  color: #8B6F47;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.1), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.menu-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.menu-button:hover::before {
+  left: 100%;
+}
+
+.menu-button:hover {
+  background: linear-gradient(135deg, #D4A574 0%, #B8956A 100%);
+  color: #FFFFFF;
+  border-color: #B8956A;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.35),
+              0 2px 8px rgba(139, 111, 71, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.menu-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.15);
+}
+
+.menu-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2),
+              0 2px 8px rgba(139, 111, 71, 0.1);
+}
+
+.back-button {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 230, 211, 0.6) 100%);
+  border: 1.5px solid rgba(212, 165, 116, 0.4);
+  color: #8B6F47;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.back-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.back-button:hover::before {
+  left: 100%;
+}
+
+.back-button:hover {
+  background: linear-gradient(135deg, #8B6F47 0%, #6B5637 100%);
+  color: #FFFFFF;
+  border-color: #6B5637;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 111, 71, 0.35),
+              0 2px 8px rgba(139, 111, 71, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.back-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.15);
+}
+
+.back-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2),
+              0 2px 8px rgba(139, 111, 71, 0.1);
+}
+
+/* Menu View */
+.menu-view {
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 110px 20px 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(to bottom, #FAF8F5 0%, #F5E6D3 100%);
+  min-height: 100vh;
+}
+
+.menu-view-header {
+  text-align: center;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 230, 211, 0.8) 100%);
+  padding: 28px 50px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(139, 111, 71, 0.15),
+              0 1px 3px rgba(139, 111, 71, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.menu-view-header h2 {
+  font-size: 2.2rem;
+  color: #8B6F47;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  text-transform: uppercase;
+}
+
+.menu-view-header p {
+  font-size: 1rem;
+  color: #B8956A;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+.menu-pages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+  align-items: center;
+}
+
+.menu-page {
+  width: 100%;
+  max-width: 900px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(139, 111, 71, 0.12),
+              0 1px 3px rgba(139, 111, 71, 0.08);
+  border: 1px solid rgba(212, 165, 116, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.menu-page:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(139, 111, 71, 0.18),
+              0 2px 5px rgba(139, 111, 71, 0.12);
+}
+
+.menu-page-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.menu-page-loading {
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  color: #666;
+}
+
+/* Responsive cho menu */
+@media (max-width: 1024px) {
+  .menu-navigation {
+    padding: 16px;
+  }
+
+  .menu-button {
+    padding: 12px 22px;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+
+  .back-button {
+    padding: 12px 22px;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu-navigation {
+    padding: 14px 12px;
+    top: 0;
+  }
+
+  .menu-buttons {
+    gap: 6px;
+  }
+
+  .menu-button {
+    padding: 11px 18px;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    border-radius: 25px;
+  }
+
+  .back-button {
+    padding: 11px 18px;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    border-radius: 25px;
+  }
+
+  .menu-view {
+    padding: 95px 10px 20px 10px;
+  }
+
+  .menu-view-header {
+    padding: 15px 20px;
+    margin-bottom: 20px;
+  }
+
+  .menu-view-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .menu-view-header p {
+    font-size: 0.9rem;
+  }
+
+  .menu-pages-container {
+    gap: 15px;
+  }
+
+  .menu-page {
+    border-radius: 4px;
+    min-height: 300px;
+  }
+
+  .menu-page-loading {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-navigation {
+    padding: 12px 8px;
+  }
+
+  .menu-buttons {
+    gap: 5px;
+  }
+
+  .menu-button {
+    padding: 10px 16px;
+    font-size: 12px;
+    letter-spacing: 0.1px;
+    border-radius: 22px;
+    border-width: 1px;
+  }
+
+  .back-button {
+    padding: 10px 16px;
+    font-size: 12px;
+    letter-spacing: 0.1px;
+    border-radius: 22px;
+    border-width: 1px;
+  }
+
+  .menu-view {
+    padding: 90px 8px 15px 8px;
+  }
+
+  .menu-view-header {
+    padding: 12px 16px;
+    margin-bottom: 15px;
+  }
+
+  .menu-view-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .menu-view-header p {
+    font-size: 0.85rem;
+  }
+
+  .menu-pages-container {
+    gap: 12px;
+  }
+
+  .menu-page {
+    border-radius: 4px;
+    min-height: 250px;
+  }
+
+  .menu-page-loading {
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 360px) {
+  .menu-button {
+    padding: 9px 14px;
+    font-size: 11px;
+  }
+
+  .back-button {
+    padding: 9px 14px;
+    font-size: 11px;
+  }
+}
