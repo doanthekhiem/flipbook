@@ -68,11 +68,11 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: "nuoc", name: "Nước", startPage: 1, endPage: 4 },
-  { id: "cafe", name: "Cafe", startPage: 5, endPage: 10 },
-  { id: "sinh-to", name: "Sinh tố", startPage: 11, endPage: 15 },
-  { id: "khac", name: "Khác", startPage: 16, endPage: 20 },
-  { id: "dac-biet", name: "Đặc biệt", startPage: 21, endPage: 23 },
+  { id: "cafe", name: "Cafe", startPage: 2, endPage: 7 },
+  { id: "tra", name: "Trà", startPage: 8, endPage: 13 },
+  { id: "sinh-to", name: "Sinh tố", startPage: 14, endPage: 15 },
+  { id: "nuoc-ep", name: "Nước ép", startPage: 16, endPage: 17 },
+  { id: "banh-ngot", name: "Bánh ngọt", startPage: 18, endPage: 19 },
 ];
 
 type ViewMode = "flipbook" | "menu";
@@ -92,7 +92,7 @@ function App() {
   const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
   const [menuPages, setMenuPages] = useState<Map<number, string>>(new Map());
 
-  const pdfUrl = "https://cdnc.heyzine.com/files/uploaded/v3/9da8b102d41c367850b4e0cbc7fc314217882cdc.pdf";
+  const pdfUrl = "https://joliecafe.vn/menu_JL.pdf";
 
   // Số trang load trước để hiển thị ngay
   const INITIAL_PAGES_TO_LOAD = 10;
